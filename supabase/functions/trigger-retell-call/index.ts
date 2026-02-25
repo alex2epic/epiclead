@@ -89,9 +89,13 @@ serve(async (req) => {
         metadata: {
           lead_id: lead.id,
           name: lead.name,
+          email: lead.email || "",
+          phone: lead.phone,
         },
         retell_llm_dynamic_variables: {
           name: lead.name,
+          email: lead.email || "",
+          phone: lead.phone,
         },
       }),
     });

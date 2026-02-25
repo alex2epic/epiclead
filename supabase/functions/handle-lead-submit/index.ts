@@ -15,14 +15,19 @@ serve(async (req) => {
   }
 
   try {
-    const { name, phone, email, source } = await req.json();
+    const { name, phone: rawPhone, email, source } = await req.json();
 
-    if (!name || !phone) {
+    if (!name || !rawPhone) {
       return new Response(
         JSON.stringify({ error: "Name and phone are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Normalize phone to E.164 format (+1XXXXXXXXXX)
+    let phone = rawPhone.replace(/\D/g, ""); // strip non-digits
+    if (phone.length === 10) phone = "1" + phone; // add country code
+    if (!phone.startsWith("+")) phone = "+" + phone;
 
     // Use service role to insert + read
     const supabase = createClient(
@@ -86,7 +91,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${serviceKey}`,
       },
-      body: JSON.stringify({ lead_id: leadId, delay_ms: 3 * 60 * 1000 }),
+      body: JSON.stringify({ lead_id: leadId, delay_ms: 10 * 1000 }),
     }).catch((err) => console.error("Failed to schedule retell call:", err));
 
     return new Response(

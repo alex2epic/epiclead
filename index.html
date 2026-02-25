@@ -961,9 +961,22 @@
           ok = res.ok;
         }
 
-        // Show success regardless (don't break UX if backend is down)
+        // Show success and prefill Calendly with their data
         form.style.display = 'none';
         document.getElementById('form-success').style.display = 'block';
+
+        // Prefill Calendly embed with form data so they don't re-enter it
+        const calendlyUrl = `https://calendly.com/alexsfreedman/website-discovery-call?name=${encodeURIComponent(data.name)}&email=${encodeURIComponent(data.email)}&a1=${encodeURIComponent(data.phone)}`;
+        const embedEl = document.getElementById('calendly-embed');
+        embedEl.setAttribute('data-url', calendlyUrl);
+        // Re-init Calendly widget with prefilled data
+        embedEl.innerHTML = '';
+        if (window.Calendly) {
+          Calendly.initInlineWidget({
+            url: calendlyUrl,
+            parentElement: embedEl,
+          });
+        }
         document.getElementById('calendly-embed-wrapper').style.display = 'block';
       } catch (err) {
         // Still show calendly — don't block the user
