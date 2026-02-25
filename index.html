@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EpicLead.ai — AI-Native Lead Generation</title>
+  <meta name="description" content="We run your ads. AI books your appointments. Done-for-you lead generation for home service businesses.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ========== RESET & VARIABLES ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    :root {
+      --bg-dark: #050508;
+      --accent-blue: #0066ff;
+      --white: #ffffff;
+      --light-bg: #f7f7f7;
+      --text-primary: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.55);
+      --text-dark: #050508;
+      --text-dark-muted: rgba(5, 5, 8, 0.6);
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-bg-blue: rgba(0, 0, 0, 0.15);
+      --card-border-blue: rgba(0, 0, 0, 0.2);
+      --cta-bg: #ffffff;
+      --cta-text: #050508;
+      --cta-bg-hover: rgba(255, 255, 255, 0.9);
+      --glow-blue: rgba(0, 102, 255, 0.15);
+      --grid-line: rgba(255, 255, 255, 0.03);
+      --pulsing-dot: #00ff88;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-primary);
+      background: var(--bg-dark);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ========== TYPOGRAPHY ========== */
+    .headline {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(3rem, 12vw, 6rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .section-headline {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(2.5rem, 10vw, 5rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    /* ========== STICKY TOP BAR ========== */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      background: rgba(5, 5, 8, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 5vw, 40px);
+    }
+    .topbar-logo {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--white);
+      text-decoration: none;
+    }
+    .topbar-cta {
+      background: var(--accent-blue);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 24px;
+      border-radius: 50px;
+      text-decoration: none;
+      transition: opacity 0.3s ease;
+    }
+    .topbar-cta:hover { opacity: 0.85; }
+
+    /* ========== SECTIONS ========== */
+    .section {
+      width: 100%;
+      padding: clamp(80px, 15vh, 120px) clamp(20px, 5vw, 40px);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .section-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ========== TAGS / BADGES ========== */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 24px;
+      color: var(--text-primary);
+    }
+    .tag-blue {
+      background: rgba(0, 0, 0, 0.1);
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+    .tag-light {
+      background: rgba(5, 5, 8, 0.06);
+      border-color: rgba(5, 5, 8, 0.1);
+      color: var(--text-dark);
+    }
+    .pulsing-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--pulsing-dot);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+    }
+
+    /* ========== CTA BUTTONS ========== */
+    .cta-button {
+      display: inline-block;
+      background: var(--cta-bg);
+      color: var(--cta-text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 18px 40px;
+      border-radius: 50px;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 480px;
+    }
+    .cta-button:hover {
+      background: var(--cta-bg-hover);
+      transform: scale(1.02);
+    }
+
+    /* ========== SECTION 1: HERO ========== */
+    .section-hero {
+      background: var(--bg-dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 100px;
+    }
+    .section-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+      pointer-events: none;
+    }
+    .section-hero::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--glow-blue) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      width: 100%;
+    }
+    .hero-subheadline {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 540px;
+      line-height: 1.6;
+    }
+    .vsl-container {
+      width: 100%;
+      max-width: 720px;
+      aspect-ratio: 16 / 9;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0;
+    }
+    .vsl-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .vsl-play-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .play-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .social-proof {
+      font-size: 14px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+    .scroll-indicator {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      animation: bobDown 2s ease-in-out infinite;
+    }
+    @keyframes bobDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* ========== SECTION 2: PROBLEM ========== */
+    .section-problem {
+      background: var(--accent-blue);
+    }
+    .section-problem .section-headline,
+    .section-problem .tag { color: var(--white); }
+    .pain-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 48px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .pain-card {
+      background: var(--card-bg-blue);
+      border: 1px solid var(--card-border-blue);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--white);
+    }
+    .pain-card-icon { font-size: 28px; flex-shrink: 0; }
+    .transition-line {
+      margin-top: 48px;
+      font-size: 20px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      font-style: italic;
+    }
+
+    /* ========== SECTION 3: SOLUTION ========== */
+    .section-solution { background: var(--bg-dark); }
+    .feature-blocks {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-top: 48px;
+      max-width: 600px;
+      width: 100%;
+    }
+    .feature-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .feature-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .feature-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== SECTION 4: HOW IT WORKS ========== */
+    .section-steps {
+      background: var(--light-bg);
+    }
+    .section-steps .section-headline { color: var(--text-dark); }
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      margin-top: 48px;
+      max-width: 600px;
+      width: 100%;
+    }
+    .step { display: flex; flex-direction: column; gap: 8px; }
+    .step-number {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(3rem, 8vw, 5rem);
+      line-height: 1;
+      color: var(--accent-blue);
+      letter-spacing: 0.02em;
+    }
+    .step-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+    .step-desc {
+      font-size: 16px;
+      color: var(--text-dark-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== SECTION 5: WHAT'S INCLUDED ========== */
+    .section-included { background: var(--bg-dark); }
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 48px;
+      max-width: 700px;
+      width: 100%;
+    }
+    .include-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    .include-card-icon { font-size: 28px; margin-bottom: 12px; }
+    .include-card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .include-card-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .promise-line {
+      margin-top: 48px;
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 600px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* ========== SECTION 6: WHY EPICLEAD ========== */
+    .section-why { background: var(--accent-blue); }
+    .section-why .section-headline { color: var(--white); }
+    .comparison {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-top: 48px;
+      max-width: 800px;
+      width: 100%;
+    }
+    .comparison-col {
+      flex: 1;
+      background: var(--card-bg-blue);
+      border: 1px solid var(--card-border-blue);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .comparison-header {
+      padding: 20px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--card-border-blue);
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .comparison-header-epic { color: var(--white); }
+    .comparison-item {
+      padding: 16px 24px;
+      font-size: 16px;
+      color: var(--white);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .comparison-item:last-child { border-bottom: none; }
+    .comparison-icon { flex-shrink: 0; font-size: 16px; }
+    .comparison-col-others .comparison-item { color: rgba(255, 255, 255, 0.7); }
+
+    /* ========== SECTION 7: FAQ ========== */
+    .section-faq { background: var(--bg-dark); }
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 48px;
+      max-width: 700px;
+      width: 100%;
+    }
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .faq-question {
+      width: 100%;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .faq-question:focus-visible {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: -2px;
+    }
+    .faq-toggle {
+      font-size: 20px;
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
+      color: var(--text-muted);
+    }
+    .faq-item.open .faq-toggle { transform: rotate(45deg); }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.3s ease;
+    }
+    .faq-item.open .faq-answer { max-height: 300px; }
+    .faq-answer-inner {
+      padding: 0 24px 20px;
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== SECTION 8: FINAL CTA ========== */
+    .section-cta {
+      background: var(--bg-dark);
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+    }
+    .section-cta::after {
+      content: '';
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, var(--glow-blue) 0%, transparent 70%);
+      bottom: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .cta-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+    }
+    .cta-subtext {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 500px;
+      line-height: 1.6;
+    }
+    .trust-line {
+      font-size: 14px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* ========== LEAD CAPTURE FORM ========== */
+    .lead-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 400px;
+      margin-top: 8px;
+    }
+    .lead-form input {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    .lead-form input::placeholder { color: var(--text-muted); }
+    .lead-form input:focus { border-color: var(--accent-blue); }
+    .lead-form .cta-button {
+      border: none;
+      cursor: pointer;
+      max-width: none;
+      font-size: 16px;
+      margin-top: 4px;
+    }
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 24px;
+      color: var(--pulsing-dot);
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .calendly-embed-wrapper {
+      display: none;
+      width: 100%;
+      max-width: 700px;
+      margin-top: 24px;
+    }
+
+    /* ========== FOOTER ========== */
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 14px;
+      color: var(--text-muted);
+      background: var(--bg-dark);
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (min-width: 768px) {
+      .card-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .comparison {
+        flex-direction: row;
+      }
+      .cta-button {
+        width: auto;
+        max-width: 400px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .hero-subheadline { font-size: 20px; }
+      .feature-blocks {
+        flex-direction: row;
+        max-width: 1000px;
+      }
+      .feature-block { flex: 1; }
+      .step-number { font-size: 5rem; }
+    }
+
+    /* ========== CENTERED CONTENT HELPER ========== */
+    .centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .left-aligned {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== STICKY TOP BAR ========== -->
+  <nav class="topbar">
+    <a href="#" class="topbar-logo">EpicLead.ai</a>
+    <a href="#lead-form" class="topbar-cta">Book a Free Call</a>
+  </nav>
+
+  <!-- ========== SECTION 1: HERO ========== -->
+  <section class="section section-hero" id="hero">
+    <div class="section-inner hero-content">
+      <div class="tag">
+        <span class="pulsing-dot"></span>
+        AI-Native Lead Generation
+      </div>
+      <h1 class="headline">WE RUN YOUR ADS.<br>AI BOOKS YOUR<br>APPOINTMENTS.</h1>
+      <p class="hero-subheadline">You focus on delivering the work. We build and run the entire system that fills your calendar — ads, funnel, and AI follow-up included.</p>
+      <div class="vsl-container">
+        <div class="vsl-play-placeholder">
+          <div class="play-icon">&#9654;</div>
+          <span>Watch how it works</span>
+        </div>
+        <!-- Replace with: <iframe src="[VIDEO_EMBED_URL]" allowfullscreen></iframe> -->
+      </div>
+      <a href="#lead-form" class="cta-button">&rarr; Book Your Free Strategy Call</a>
+      <p class="social-proof">Trusted by home service businesses across the US</p>
+      <div class="scroll-indicator">&darr;</div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 2: THE PROBLEM ========== -->
+  <section class="section section-problem" id="problem">
+    <div class="section-inner centered">
+      <div class="tag tag-blue">Sound familiar?</div>
+      <h2 class="section-headline">YOU'RE PAYING<br>FOR LEADS THAT<br>GO NOWHERE.</h2>
+      <div class="pain-cards">
+        <div class="pain-card">
+          <span class="pain-card-icon">📵</span>
+          <span>You buy lead packs and half never pick up</span>
+        </div>
+        <div class="pain-card">
+          <span class="pain-card-icon">💸</span>
+          <span>You're running ads with no real follow-up system</span>
+        </div>
+        <div class="pain-card">
+          <span class="pain-card-icon">📅</span>
+          <span>Your calendar is empty while competitors stay booked</span>
+        </div>
+      </div>
+      <p class="transition-line">There's a better way.</p>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 3: THE SOLUTION ========== -->
+  <section class="section section-solution" id="solution">
+    <div class="section-inner centered">
+      <div class="tag">The Epic System</div>
+      <h2 class="section-headline">A DONE-FOR-YOU<br>MACHINE THAT<br>RUNS 24/7</h2>
+      <div class="feature-blocks">
+        <div class="feature-block">
+          <div class="feature-icon">🎯</div>
+          <div class="feature-title">AI-Generated Meta Ads</div>
+          <div class="feature-desc">Scroll-stopping video ads created and managed for you, targeting the right people in your market</div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-icon">🖥️</div>
+          <div class="feature-title">High-Converting Funnel</div>
+          <div class="feature-desc">Your leads land on a page built to pre-sell your offer before they ever speak to you</div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-icon">🤖</div>
+          <div class="feature-title">AI Caller & Booking System</div>
+          <div class="feature-desc">If they don't self-book, our AI calls within 60 seconds, qualifies them, and locks in an appointment automatically</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 4: HOW IT WORKS ========== -->
+  <section class="section section-steps" id="steps">
+    <div class="section-inner left-aligned">
+      <div class="tag tag-light">Simple process</div>
+      <h2 class="section-headline">FROM AD CLICK<br>TO BOOKED CALL<br>IN 3 STEPS</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">01</div>
+          <div class="step-title">We Build & Launch</div>
+          <div class="step-desc">Your ads, funnel, and AI system are live within 7–10 days of onboarding. Zero tech headaches on your end.</div>
+        </div>
+        <div class="step">
+          <div class="step-number">02</div>
+          <div class="step-title">Traffic Hits Your Funnel</div>
+          <div class="step-desc">Prospects see your offer, watch your VSL, and either book themselves or submit their info.</div>
+        </div>
+        <div class="step">
+          <div class="step-number">03</div>
+          <div class="step-title">AI Does the Follow-Up</div>
+          <div class="step-desc">Our AI caller contacts every lead within 60 seconds, qualifies them on the phone, and puts them on your calendar.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 5: WHAT'S INCLUDED ========== -->
+  <section class="section section-included" id="included">
+    <div class="section-inner centered">
+      <div class="tag">Everything. Done for you.</div>
+      <h2 class="section-headline">ONE SYSTEM.<br>ZERO GUESSWORK.</h2>
+      <div class="card-grid">
+        <div class="include-card">
+          <div class="include-card-icon">🎯</div>
+          <div class="include-card-title">AI Ad Creatives</div>
+          <div class="include-card-desc">AI-generated UGC-style video ads built and managed</div>
+        </div>
+        <div class="include-card">
+          <div class="include-card-icon">🖥️</div>
+          <div class="include-card-title">Full Funnel Build</div>
+          <div class="include-card-desc">VSL page, offer page, and calendar booking flow</div>
+        </div>
+        <div class="include-card">
+          <div class="include-card-icon">🤖</div>
+          <div class="include-card-title">AI Caller System</div>
+          <div class="include-card-desc">Calls, qualifies, and books leads 24/7 automatically</div>
+        </div>
+        <div class="include-card">
+          <div class="include-card-icon">📊</div>
+          <div class="include-card-title">Campaign Management</div>
+          <div class="include-card-desc">Monthly reporting, optimization, and scaling</div>
+        </div>
+      </div>
+      <p class="promise-line">"We don't just run ads. We build the system that turns clicks into customers — automatically."</p>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 6: WHY EPICLEAD ========== -->
+  <section class="section section-why" id="why">
+    <div class="section-inner centered">
+      <div class="tag tag-blue">Why we're different</div>
+      <h2 class="section-headline">NOT ANOTHER<br>ADS AGENCY.</h2>
+      <div class="comparison">
+        <div class="comparison-col comparison-col-others">
+          <div class="comparison-header">Other Agencies</div>
+          <div class="comparison-item"><span class="comparison-icon">&#10060;</span><span>Hand you leads and disappear</span></div>
+          <div class="comparison-item"><span class="comparison-icon">&#10060;</span><span>Generic templates and copy-paste campaigns</span></div>
+          <div class="comparison-item"><span class="comparison-icon">&#10060;</span><span>You chase cold leads manually</span></div>
+          <div class="comparison-item"><span class="comparison-icon">&#10060;</span><span>Monthly retainer, no accountability</span></div>
+        </div>
+        <div class="comparison-col comparison-col-epic">
+          <div class="comparison-header comparison-header-epic">EpicLead.ai</div>
+          <div class="comparison-item"><span class="comparison-icon">&#9989;</span><span>We follow up until they're booked</span></div>
+          <div class="comparison-item"><span class="comparison-icon">&#9989;</span><span>Custom AI content for your market</span></div>
+          <div class="comparison-item"><span class="comparison-icon">&#9989;</span><span>AI calls every lead within 60 seconds</span></div>
+          <div class="comparison-item"><span class="comparison-icon">&#9989;</span><span>We only win when you win</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 7: FAQ ========== -->
+  <section class="section section-faq" id="faq">
+    <div class="section-inner centered">
+      <h2 class="section-headline">Common Questions</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span>Do you replace my existing phone system or CRM?</span>
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">No. We plug our AI caller into your existing setup. We don't touch what's already working for you.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span>How fast can we go live?</span>
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Most clients are fully live within 7–10 business days after onboarding.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span>What markets do you work in?</span>
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">We work across the US. We do limit to one client per market per niche — book a call to check your area.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span>What kind of results should I expect?</span>
+            <span class="faq-toggle">+</span>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Every market is different. What we guarantee is a complete system built and running — ads live, funnel converting, AI following up every lead. The more we optimize, the better it gets.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 8: FINAL CTA / LEAD CAPTURE ========== -->
+  <section class="section section-cta" id="cta">
+    <div class="section-inner cta-content">
+      <h2 class="headline">READY TO WAKE UP<br>TO BOOKED<br>APPOINTMENTS?</h2>
+      <p class="cta-subtext">We work with a limited number of businesses per market. Book your free strategy call to see if your area is still available.</p>
+
+      <form class="lead-form" id="lead-form">
+        <input type="text" name="name" placeholder="Your name" required autocomplete="name">
+        <input type="email" name="email" placeholder="Email address" required autocomplete="email">
+        <input type="tel" name="phone" placeholder="Phone number" required autocomplete="tel">
+        <button type="submit" class="cta-button">&rarr; Book Your Free Strategy Call</button>
+      </form>
+
+      <div class="form-success" id="form-success">You're in! Pick a time below to lock in your call.</div>
+
+      <div class="calendly-embed-wrapper" id="calendly-embed-wrapper">
+        <div class="calendly-inline-widget"
+          id="calendly-embed"
+          data-url="https://calendly.com/alexsfreedman"
+          style="min-width:320px;height:700px;">
+        </div>
+      </div>
+
+      <p class="trust-line">No contracts. No fluff. Just a system that works.</p>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">@epiclead.ai</footer>
+
+  <!-- Calendly widget JS -->
+  <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+
+  <script>
+    /* ========== SCROLL FADE-IN ========== */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.section').forEach(section => {
+      observer.observe(section);
+    });
+
+    /* ========== FAQ ACCORDION ========== */
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.querySelector('.faq-question').addEventListener('click', () => {
+        const isOpen = item.classList.contains('open');
+        const btn = item.querySelector('.faq-question');
+        // Close all
+        document.querySelectorAll('.faq-item').forEach(i => {
+          i.classList.remove('open');
+          i.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+        });
+        // Toggle clicked
+        if (!isOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+
+    /* ========== LEAD FORM SUBMISSION ========== */
+    const SUPABASE_URL = 'https://xoblfgnskmefxgmtabdc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvYmxmZ25za21lZnhnbXRhYmRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1ODEzNTcsImV4cCI6MjA3NzE1NzM1N30.RrZuWF_FDl7K5Ppqv4XPwl7Qn09B8SmhRmgkKvRpPsA';
+
+    document.getElementById('lead-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        phone: form.phone.value.trim(),
+      };
+
+      if (!data.name || !data.phone) return;
+
+      // Disable form while submitting
+      const btn = form.querySelector('button');
+      btn.textContent = 'Submitting...';
+      btn.disabled = true;
+
+      try {
+        // Try edge function first, fall back to direct insert
+        let ok = false;
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/handle-lead-submit`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify(data),
+          });
+          ok = res.ok;
+        } catch (_) {
+          // Edge function not deployed yet — insert directly
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({ ...data, status: 'form_started' }),
+          });
+          ok = res.ok;
+        }
+
+        // Show success regardless (don't break UX if backend is down)
+        form.style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+        document.getElementById('calendly-embed-wrapper').style.display = 'block';
+      } catch (err) {
+        // Still show calendly — don't block the user
+        form.style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+        document.getElementById('calendly-embed-wrapper').style.display = 'block';
+      }
+    });
+
+    /* ========== SMOOTH SCROLL FOR ANCHOR LINKS ========== */
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
