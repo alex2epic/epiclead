@@ -12,8 +12,8 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Screenshots from preview
-*.png
+# Screenshots from preview (keep og-image.png)
+!og-image.png
 
 # Vercel
 .vercel
