@@ -53,14 +53,16 @@ serve(async (req) => {
       console.log(`Inbound call from known lead: ${lead.name} (${lead.id})`);
       return new Response(
         JSON.stringify({
-          dynamic_variables: {
-            name: lead.name || "",
-            email: lead.email || "",
-            phone: phone,
-            lead_id: lead.id,
-            is_known_lead: "true",
-            lead_status: lead.status || "",
-            calendly_event_uri: lead.calendly_event_uri || "",
+          call_inbound: {
+            dynamic_variables: {
+              name: lead.name || "",
+              email: lead.email || "",
+              phone: phone,
+              lead_id: lead.id,
+              is_known_lead: "true",
+              lead_status: lead.status || "",
+              calendly_event_uri: lead.calendly_event_uri || "",
+            },
           },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
@@ -70,14 +72,16 @@ serve(async (req) => {
       console.log(`Inbound call from unknown number: ${phone}`);
       return new Response(
         JSON.stringify({
-          dynamic_variables: {
-            name: "",
-            email: "",
-            phone: phone,
-            lead_id: "",
-            is_known_lead: "false",
-            lead_status: "",
-            calendly_event_uri: "",
+          call_inbound: {
+            dynamic_variables: {
+              name: "",
+              email: "",
+              phone: phone,
+              lead_id: "",
+              is_known_lead: "false",
+              lead_status: "",
+              calendly_event_uri: "",
+            },
           },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
