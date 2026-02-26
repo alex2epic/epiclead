@@ -79,13 +79,15 @@ serve(async (req) => {
     const dayStr = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/Chicago" });
     const timeStr = dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
 
-    // Update lead in Supabase if we have a lead_id
-    if (lead_id) {
-      try {
-        const supabase = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-        );
+    // Save/update lead in Supabase
+    try {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      if (lead_id) {
+        // Update existing lead
         await supabase
           .from("leads")
           .update({
@@ -94,9 +96,23 @@ serve(async (req) => {
             notes: `AI booked Zoom call for ${dayStr} at ${timeStr}`,
           })
           .eq("id", lead_id);
-      } catch (e) {
-        console.error("Failed to update lead:", e);
+      } else {
+        // Create new lead record (for callers not already in the system)
+        const normalizedPhone = phone ? phone.replace(/\D/g, "").replace(/^(\d{10})$/, "1$1").replace(/^([^+])/, "+$1") : null;
+        await supabase
+          .from("leads")
+          .insert({
+            name: name,
+            email: inviteeEmail !== `lead-${Date.now()}@epiclead.ai` ? inviteeEmail : null,
+            phone: normalizedPhone,
+            status: "ai_booked",
+            source: "phone_call",
+            calendly_event_uri: eventUri || null,
+            notes: `AI booked Zoom call for ${dayStr} at ${timeStr}`,
+          });
       }
+    } catch (e) {
+      console.error("Failed to save lead:", e);
     }
 
     return new Response(

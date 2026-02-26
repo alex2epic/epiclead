@@ -15,51 +15,128 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
+    console.log("lookup-lead received:", JSON.stringify(body));
+
     const args = body.args || body;
     let phone = args.phone || "";
+    const email = args.email || "";
+    const name = args.name || "";
 
-    if (!phone) {
+    // Retell includes call metadata with from_number — use as fallback
+    const callFromNumber = body.call?.from_number || body.from_number || "";
+    if (!phone && callFromNumber) {
+      phone = callFromNumber;
+      console.log("Using caller's phone from call metadata:", phone);
+    }
+
+    // Also check dynamic_variables for phone
+    const dynPhone = body.call?.dynamic_variables?.phone || body.dynamic_variables?.phone || "";
+    if (!phone && dynPhone) {
+      phone = dynPhone;
+      console.log("Using phone from dynamic variables:", phone);
+    }
+
+    console.log("Searching with - phone:", phone, "email:", email, "name:", name);
+
+    if (!phone && !email && !name) {
       return new Response(
-        JSON.stringify({ result: "No phone number provided. I can't look up the caller.", found: false }),
+        JSON.stringify({ result: "I need a phone number, email, or name to look up the caller.", found: false }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Normalize phone to E.164
-    phone = phone.replace(/\D/g, "");
-    if (phone.length === 10) phone = "1" + phone;
-    if (!phone.startsWith("+")) phone = "+" + phone;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Look up the most recent lead with this phone number
-    const { data: lead, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("phone", phone)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    let lead = null;
+    let error = null;
 
-    if (error || !lead) {
+    // Try phone first
+    if (phone) {
+      phone = phone.replace(/\D/g, "");
+      if (phone.length === 10) phone = "1" + phone;
+      if (!phone.startsWith("+")) phone = "+" + phone;
+
+      const res = await supabase
+        .from("leads")
+        .select("*")
+        .eq("phone", phone)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      lead = res.data;
+      error = res.error;
+    }
+
+    // If not found by phone, try email
+    if (!lead && email) {
+      const res = await supabase
+        .from("leads")
+        .select("*")
+        .ilike("email", email.trim())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      lead = res.data;
+      error = res.error;
+    }
+
+    // If still not found, try name (partial match)
+    if (!lead && name) {
+      const res = await supabase
+        .from("leads")
+        .select("*")
+        .ilike("name", `%${name.trim()}%`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      lead = res.data;
+      error = res.error;
+    }
+
+    if (!lead) {
+      console.log("No lead found. Last error:", error?.message);
       return new Response(
         JSON.stringify({
-          result: "I don't have this number in our system. This might be a new caller.",
+          result: `I could not find any record matching the info provided (phone: ${phone || "none"}, email: ${email || "none"}, name: ${name || "none"}). This might be a new caller. Ask if they want to book a new appointment.`,
           found: false,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    console.log("Found lead:", lead.id, lead.name, lead.status);
 
-    // Check if they have a Calendly event
+    // Check if they have a Calendly event and get appointment details
     let appointmentInfo = "No appointment on file.";
+    let appointmentTime = "";
     if (lead.calendly_event_uri) {
-      appointmentInfo = `Has a booked appointment (Calendly event: ${lead.calendly_event_uri}).`;
+      // Fetch the actual appointment details from Calendly
+      try {
+        const calendlyPat = Deno.env.get("CALENDLY_PAT");
+        if (calendlyPat) {
+          const eventRes = await fetch(lead.calendly_event_uri, {
+            headers: { "Authorization": `Bearer ${calendlyPat}` },
+          });
+          if (eventRes.ok) {
+            const eventData = await eventRes.json();
+            const event = eventData.resource;
+            if (event && event.start_time) {
+              const dt = new Date(event.start_time);
+              const day = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/Chicago" });
+              const time = dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+              appointmentTime = `${day} at ${time}`;
+              appointmentInfo = `Has a booked appointment on ${appointmentTime}.`;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch Calendly event details:", e);
+        appointmentInfo = "Has a booked appointment but I could not fetch the exact time.";
+      }
     } else if (lead.status === "ai_booked") {
-      appointmentInfo = "Has a booked appointment (booked by AI).";
+      appointmentInfo = "Has a booked appointment (booked by AI) but no Calendly link on file.";
     }
 
     return new Response(
@@ -70,6 +147,7 @@ serve(async (req) => {
         name: lead.name,
         email: lead.email,
         status: lead.status,
+        appointment_time: appointmentTime || null,
         calendly_event_uri: lead.calendly_event_uri || null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
