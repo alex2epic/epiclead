@@ -238,24 +238,20 @@
     .vsl-container {
       width: 100%;
       max-width: 400px;
-      aspect-ratio: 3 / 2;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #000;
       border-radius: 16px;
       overflow: hidden;
       position: relative;
-      cursor: pointer;
       margin: 12px 0;
     }
     .vsl-container video {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
       display: block;
+      border-radius: 16px;
     }
     .vsl-unmute-hint {
       position: absolute;
-      bottom: 16px;
+      bottom: 56px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.7);
@@ -269,8 +265,9 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      z-index: 2;
     }
-    .vsl-unmute-hint.hidden { opacity: 0; }
+    .vsl-unmute-hint.hidden { opacity: 0; pointer-events: none; }
     .social-proof {
       font-size: 14px;
       color: var(--text-muted);
@@ -677,11 +674,11 @@
       </div>
       <h1 class="headline">WE RUN YOUR ADS.<br>AI BOOKS YOUR<br>APPOINTMENTS.</h1>
       <p class="hero-subheadline">You focus on delivering the work. We build and run the entire system that fills your calendar — ads, funnel, and AI follow-up included.</p>
-      <div class="vsl-container" id="vsl-wrapper" onclick="toggleVslMute()">
-        <video id="vsl-video" autoplay muted loop playsinline>
+      <div class="vsl-container" id="vsl-wrapper">
+        <video id="vsl-video" autoplay muted loop playsinline controls preload="auto">
           <source src="assets/vsl.mp4" type="video/mp4">
         </video>
-        <div class="vsl-unmute-hint" id="vsl-hint">🔇 Tap to unmute</div>
+        <div class="vsl-unmute-hint" id="vsl-hint" onclick="toggleVslMute()">🔇 Tap to unmute</div>
       </div>
       <a href="#cta" class="cta-button">&rarr; Book Your Free Strategy Call</a>
       <p class="social-proof">Trusted by home service businesses across the US</p>
@@ -1009,6 +1006,9 @@
     function toggleVslMute() {
       const video = document.getElementById('vsl-video');
       const hint = document.getElementById('vsl-hint');
+      if (video.paused) {
+        video.play();
+      }
       if (video.muted) {
         video.muted = false;
         video.loop = false;
@@ -1018,7 +1018,20 @@
         hint.classList.remove('hidden');
       }
     }
-    // Hide hint once they've unmuted
+    // Ensure autoplay fires — fallback for browsers that block it
+    (function() {
+      const video = document.getElementById('vsl-video');
+      if (video) {
+        var playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function() {
+            // Autoplay blocked — video will show controls so user can tap play
+            video.muted = true;
+          });
+        }
+      }
+    })();
+    // When video ends, re-mute and show hint
     document.getElementById('vsl-video').addEventListener('ended', function() {
       this.muted = true;
       document.getElementById('vsl-hint').classList.remove('hidden');
