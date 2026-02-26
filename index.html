@@ -996,29 +996,29 @@
       <p class="cta-subtext">We work with a limited number of businesses per market. Book your free strategy call to see if your area is still available.</p>
 
       <div class="quiz-wrapper" id="quiz-wrapper">
-        <!-- Progress bars -->
         <div class="quiz-progress">
           <div class="quiz-progress-bar active" data-step="0"></div>
           <div class="quiz-progress-bar" data-step="1"></div>
           <div class="quiz-progress-bar" data-step="2"></div>
           <div class="quiz-progress-bar" data-step="3"></div>
-          <div class="quiz-progress-bar" data-step="4"></div>
         </div>
 
-        <!-- Step 0: Name + Email -->
+        <!-- Step 0: Name + Email + Phone -->
         <div class="quiz-step active" data-step="0">
-          <span class="quiz-step-label">Step 1 of 5</span>
-          <h3 class="quiz-question">Let's get started — what's your name and email?</h3>
+          <span class="quiz-step-label">Step 1 of 4</span>
+          <h3 class="quiz-question">Let's see if we're a fit — enter your info to start</h3>
           <div class="quiz-form-fields">
             <input type="text" id="quiz-name" placeholder="Your name" autocomplete="name">
             <input type="email" id="quiz-email" placeholder="Email address" autocomplete="email">
+            <input type="tel" id="quiz-phone" placeholder="Phone number" autocomplete="tel">
           </div>
           <button class="quiz-next-btn" id="quiz-next-0" disabled>Next &rarr;</button>
+          <p class="form-consent">By continuing, you consent to receive calls and texts from Epic Lead regarding your inquiry. Msg &amp; data rates may apply. Reply STOP to opt out.</p>
         </div>
 
         <!-- Step 1: Business type -->
         <div class="quiz-step" data-step="1">
-          <span class="quiz-step-label">Step 2 of 5</span>
+          <span class="quiz-step-label">Step 2 of 4</span>
           <h3 class="quiz-question">What type of home service do you offer?</h3>
           <div class="quiz-options" data-quiz="business_type">
             <div class="quiz-option" data-value="Roofing">
@@ -1050,7 +1050,7 @@
 
         <!-- Step 2: Ad spend -->
         <div class="quiz-step" data-step="2">
-          <span class="quiz-step-label">Step 3 of 5</span>
+          <span class="quiz-step-label">Step 3 of 4</span>
           <h3 class="quiz-question">How much are you currently spending on ads per month?</h3>
           <div class="quiz-options" data-quiz="ad_spend">
             <div class="quiz-option" data-value="Not yet">
@@ -1072,9 +1072,9 @@
           </div>
         </div>
 
-        <!-- Step 3: Biggest challenge -->
+        <!-- Step 3: Biggest challenge → then shows Calendly -->
         <div class="quiz-step" data-step="3">
-          <span class="quiz-step-label">Step 4 of 5</span>
+          <span class="quiz-step-label">Last question!</span>
           <h3 class="quiz-question">What's your biggest challenge right now?</h3>
           <div class="quiz-options" data-quiz="biggest_challenge">
             <div class="quiz-option" data-value="Not enough leads">
@@ -1094,17 +1094,6 @@
               <span class="quiz-option-label">All of the above</span>
             </div>
           </div>
-        </div>
-
-        <!-- Step 4: Phone + Submit -->
-        <div class="quiz-step" data-step="4">
-          <span class="quiz-step-label">Last step!</span>
-          <h3 class="quiz-question">What's the best number to reach you?</h3>
-          <div class="quiz-form-fields">
-            <input type="tel" id="quiz-phone" placeholder="Phone number" autocomplete="tel">
-          </div>
-          <button class="quiz-next-btn" id="quiz-submit" disabled>&rarr; Book Your Free Strategy Call</button>
-          <p class="form-consent">By submitting, you consent to receive calls and texts from Epic Lead regarding your inquiry. Msg &amp; data rates may apply. Reply STOP to opt out.</p>
         </div>
       </div>
 
@@ -1166,74 +1155,44 @@
 
     (function() {
       var currentStep = 0;
-      var totalSteps = 5;
+      var leadId = null;
       var quizData = { business_type: '', ad_spend: '', biggest_challenge: '' };
+      var nameInput = document.getElementById('quiz-name');
+      var emailInput = document.getElementById('quiz-email');
+      var phoneInput = document.getElementById('quiz-phone');
+      var nextBtn0 = document.getElementById('quiz-next-0');
 
       function goToStep(step) {
         currentStep = step;
-        document.querySelectorAll('.quiz-step').forEach(function(el) {
-          el.classList.remove('active');
-        });
+        document.querySelectorAll('.quiz-step').forEach(function(el) { el.classList.remove('active'); });
         var target = document.querySelector('.quiz-step[data-step="' + step + '"]');
         if (target) target.classList.add('active');
-        // Update progress bars
         document.querySelectorAll('.quiz-progress-bar').forEach(function(bar) {
           bar.classList.toggle('active', parseInt(bar.dataset.step) <= step);
         });
       }
 
-      // Step 0: Name + Email → Next button
-      var nameInput = document.getElementById('quiz-name');
-      var emailInput = document.getElementById('quiz-email');
-      var nextBtn0 = document.getElementById('quiz-next-0');
-
+      // Step 0: Name + Email + Phone → submit lead immediately, AI caller fires
       function checkStep0() {
-        nextBtn0.disabled = !(nameInput.value.trim() && emailInput.value.trim());
+        nextBtn0.disabled = !(nameInput.value.trim() && emailInput.value.trim() && phoneInput.value.trim());
       }
       nameInput.addEventListener('input', checkStep0);
       emailInput.addEventListener('input', checkStep0);
-      nextBtn0.addEventListener('click', function() { goToStep(1); });
+      phoneInput.addEventListener('input', checkStep0);
 
-      // Steps 1-3: Quiz option cards — click to select and auto-advance
-      document.querySelectorAll('.quiz-options').forEach(function(grid) {
-        grid.querySelectorAll('.quiz-option').forEach(function(opt) {
-          opt.addEventListener('click', function() {
-            // Mark selected
-            grid.querySelectorAll('.quiz-option').forEach(function(o) { o.classList.remove('selected'); });
-            opt.classList.add('selected');
-            // Store answer
-            var key = grid.dataset.quiz;
-            quizData[key] = opt.dataset.value;
-            // Auto-advance after brief visual feedback
-            setTimeout(function() { goToStep(currentStep + 1); }, 300);
-          });
-        });
-      });
-
-      // Step 4: Phone + Submit
-      var phoneInput = document.getElementById('quiz-phone');
-      var submitBtn = document.getElementById('quiz-submit');
-
-      phoneInput.addEventListener('input', function() {
-        submitBtn.disabled = !phoneInput.value.trim();
-      });
-
-      submitBtn.addEventListener('click', async function() {
+      nextBtn0.addEventListener('click', async function() {
         var data = {
           name: nameInput.value.trim(),
           email: emailInput.value.trim(),
           phone: phoneInput.value.trim(),
-          business_type: quizData.business_type,
-          ad_spend: quizData.ad_spend,
-          biggest_challenge: quizData.biggest_challenge,
         };
         if (!data.name || !data.phone) return;
 
-        submitBtn.textContent = 'Submitting...';
-        submitBtn.disabled = true;
+        nextBtn0.textContent = 'Saving...';
+        nextBtn0.disabled = true;
 
         try {
-          await fetch(SUPABASE_URL + '/functions/v1/handle-lead-submit', {
+          var res = await fetch(SUPABASE_URL + '/functions/v1/handle-lead-submit', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1241,13 +1200,61 @@
             },
             body: JSON.stringify(data),
           });
-        } catch (_) {}
+          var result = await res.json();
+          leadId = result.lead_id || null;
+          console.log('Lead created:', leadId);
+        } catch (err) {
+          console.error('Lead submit error:', err);
+        }
+
+        goToStep(1);
+      });
+
+      // Steps 1-3: Quiz cards — click to select and auto-advance
+      document.querySelectorAll('.quiz-options').forEach(function(grid) {
+        grid.querySelectorAll('.quiz-option').forEach(function(opt) {
+          opt.addEventListener('click', function() {
+            grid.querySelectorAll('.quiz-option').forEach(function(o) { o.classList.remove('selected'); });
+            opt.classList.add('selected');
+            quizData[grid.dataset.quiz] = opt.dataset.value;
+
+            if (currentStep < 3) {
+              setTimeout(function() { goToStep(currentStep + 1); }, 300);
+            } else {
+              setTimeout(function() { finishQuiz(); }, 300);
+            }
+          });
+        });
+      });
+
+      function finishQuiz() {
+        // Update lead with quiz answers
+        if (leadId) {
+          fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + leadId, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
+              business_type: quizData.business_type,
+              ad_spend: quizData.ad_spend,
+              biggest_challenge: quizData.biggest_challenge,
+              notes: 'Business: ' + quizData.business_type + '. Ad spend: ' + quizData.ad_spend + '. Challenge: ' + quizData.biggest_challenge,
+            }),
+          }).catch(function(e) { console.error('Quiz update error:', e); });
+        }
 
         // Show Calendly
         document.getElementById('quiz-wrapper').style.display = 'none';
         document.getElementById('form-success').style.display = 'block';
 
-        var calendlyUrl = 'https://calendly.com/alexsfreedman/website-discovery-call?name=' + encodeURIComponent(data.name) + '&email=' + encodeURIComponent(data.email) + '&a1=' + encodeURIComponent(data.phone);
+        var nm = nameInput.value.trim();
+        var em = emailInput.value.trim();
+        var ph = phoneInput.value.trim();
+        var calendlyUrl = 'https://calendly.com/alexsfreedman/website-discovery-call?name=' + encodeURIComponent(nm) + '&email=' + encodeURIComponent(em) + '&a1=' + encodeURIComponent(ph);
         var embedEl = document.getElementById('calendly-embed');
         embedEl.setAttribute('data-url', calendlyUrl);
         embedEl.innerHTML = '';
@@ -1255,7 +1262,7 @@
           Calendly.initInlineWidget({ url: calendlyUrl, parentElement: embedEl });
         }
         document.getElementById('calendly-embed-wrapper').style.display = 'block';
-      });
+      }
     })();
 
     /* ========== SMOOTH SCROLL FOR ANCHOR LINKS ========== */

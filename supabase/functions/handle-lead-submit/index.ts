@@ -84,32 +84,31 @@ serve(async (req) => {
       );
     }
 
-    // Schedule the AI call after 3 minutes
-    // We invoke trigger-retell-call via a delayed fetch using Deno.alarm or setTimeout
+    // Trigger AI caller with 15s delay for testing (change to 90s for production)
     const leadId = lead.id;
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Fire-and-forget: call trigger-retell-call after 3 min delay
-    // EdgeRuntime doesn't support long setTimeout, so we use a separate approach:
-    // We'll update call_scheduled_at and trigger-retell-call will be invoked by a cron or
-    // we invoke it immediately and it handles the delay internally.
-    const scheduledAt = new Date(Date.now() + 3 * 60 * 1000).toISOString();
+    const scheduledAt = new Date(Date.now() + 15 * 1000).toISOString();
     await supabase
       .from("leads")
       .update({ call_scheduled_at: scheduledAt })
       .eq("id", leadId);
 
-    // Invoke trigger-retell-call immediately — it will check timing internally
-    // Using EdgeRuntime's ability to invoke another function
-    fetch(`${supabaseUrl}/functions/v1/trigger-retell-call`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({ lead_id: leadId, delay_ms: 10 * 1000 }),
-    }).catch((err) => console.error("Failed to schedule retell call:", err));
+    // MUST await — fire-and-forget kills the fetch when edge runtime exits
+    try {
+      const triggerRes = await fetch(`${supabaseUrl}/functions/v1/trigger-retell-call`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ lead_id: leadId, delay_ms: 15 * 1000 }),
+      });
+      console.log("trigger-retell-call response:", triggerRes.status);
+    } catch (err) {
+      console.error("Failed to trigger retell call:", err);
+    }
 
     return new Response(
       JSON.stringify({ lead_id: leadId, status: "form_started" }),
