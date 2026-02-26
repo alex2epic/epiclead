@@ -242,6 +242,7 @@
       border-radius: 16px;
       overflow: hidden;
       position: relative;
+      cursor: pointer;
       margin: 12px 0;
     }
     .vsl-container video {
@@ -251,7 +252,7 @@
     }
     .vsl-unmute-hint {
       position: absolute;
-      bottom: 56px;
+      bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.7);
@@ -260,14 +261,15 @@
       border-radius: 20px;
       font-size: 13px;
       font-weight: 500;
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
       transition: opacity 0.3s;
       display: flex;
       align-items: center;
       gap: 6px;
       z-index: 2;
     }
-    .vsl-unmute-hint.hidden { opacity: 0; pointer-events: none; }
+    .vsl-unmute-hint.hidden { opacity: 0; pointer-events: none; cursor: default; }
     .social-proof {
       font-size: 14px;
       color: var(--text-muted);
@@ -674,11 +676,11 @@
       </div>
       <h1 class="headline">WE RUN YOUR ADS.<br>AI BOOKS YOUR<br>APPOINTMENTS.</h1>
       <p class="hero-subheadline">You focus on delivering the work. We build and run the entire system that fills your calendar — ads, funnel, and AI follow-up included.</p>
-      <div class="vsl-container" id="vsl-wrapper">
-        <video id="vsl-video" autoplay muted loop playsinline controls preload="auto">
+      <div class="vsl-container" id="vsl-wrapper" onclick="toggleVslMute()">
+        <video id="vsl-video" autoplay muted loop playsinline preload="auto">
           <source src="assets/vsl.mp4" type="video/mp4">
         </video>
-        <div class="vsl-unmute-hint" id="vsl-hint" onclick="toggleVslMute()">🔇 Tap to unmute</div>
+        <div class="vsl-unmute-hint" id="vsl-hint">🔇 Tap to unmute</div>
       </div>
       <a href="#cta" class="cta-button">&rarr; Book Your Free Strategy Call</a>
       <p class="social-proof">Trusted by home service businesses across the US</p>
