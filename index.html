@@ -1203,6 +1203,18 @@
           var result = await res.json();
           leadId = result.lead_id || null;
           console.log('Lead created:', leadId);
+
+          // Fire AI caller in background (10s delay for testing, change to 90s for prod)
+          if (leadId && !result.duplicate) {
+            fetch(SUPABASE_URL + '/functions/v1/trigger-retell-call', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              },
+              body: JSON.stringify({ lead_id: leadId, delay_ms: 10000 }),
+            }).catch(function(e) { console.error('Trigger call error:', e); });
+          }
         } catch (err) {
           console.error('Lead submit error:', err);
         }
