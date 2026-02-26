@@ -56,10 +56,6 @@
       background: var(--bg-dark);
       overflow-x: hidden;
       line-height: 1.6;
-      padding-bottom: 72px;
-    }
-    @media (min-width: 768px) {
-      body { padding-bottom: 0; }
     }
 
     /* ========== TYPOGRAPHY ========== */
@@ -330,30 +326,6 @@
       letter-spacing: 0.02em;
     }
 
-    /* ========== FLOATING CTA ========== */
-    .floating-cta {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 999;
-      padding: 12px 16px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-      background: linear-gradient(to top, rgba(5, 5, 8, 0.95) 60%, transparent);
-      display: flex;
-      justify-content: center;
-      pointer-events: none;
-    }
-    .floating-cta .cta-button {
-      pointer-events: auto;
-      max-width: 360px;
-      font-size: 15px;
-      padding: 14px 32px;
-      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
-    }
-    @media (min-width: 768px) {
-      .floating-cta { display: none; }
-    }
 
     /* ========== SECTION 2: PROBLEM ========== */
     .section-problem {
@@ -1075,11 +1047,6 @@
       });
     });
   </script>
-
-  <!-- Floating CTA for mobile -->
-  <div class="floating-cta">
-    <a href="#cta" class="cta-button">&rarr; Book Your Free Strategy Call</a>
-  </div>
 
   <script>
     (function() {
