@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, phone: rawPhone, email, source } = await req.json();
+    const { name, phone: rawPhone, email, source, business_type, ad_spend, biggest_challenge } = await req.json();
 
     if (!name || !rawPhone) {
       return new Response(
@@ -52,10 +52,27 @@ serve(async (req) => {
       );
     }
 
+    // Build notes from quiz answers for AI caller context
+    const quizNotes = [
+      business_type ? `Business: ${business_type}` : null,
+      ad_spend ? `Ad spend: ${ad_spend}` : null,
+      biggest_challenge ? `Challenge: ${biggest_challenge}` : null,
+    ].filter(Boolean).join('. ');
+
     // Insert new lead
     const { data: lead, error: insertError } = await supabase
       .from("leads")
-      .insert({ name, phone, email: email || null, source: source || "website", status: "form_started" })
+      .insert({
+        name,
+        phone,
+        email: email || null,
+        source: source || "website",
+        status: "form_started",
+        business_type: business_type || null,
+        ad_spend: ad_spend || null,
+        biggest_challenge: biggest_challenge || null,
+        notes: quizNotes || null,
+      })
       .select("id")
       .single();
 

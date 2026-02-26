@@ -96,6 +96,10 @@ serve(async (req) => {
           name: lead.name,
           email: lead.email || "",
           phone: lead.phone,
+          business_type: lead.business_type || "",
+          ad_spend: lead.ad_spend || "",
+          biggest_challenge: lead.biggest_challenge || "",
+          lead_id: lead.id,
         },
       }),
     });
