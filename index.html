@@ -1117,7 +1117,25 @@
   <!-- Calendly widget JS -->
   <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 
+  <!-- Haptic Feedback -->
+  <script type="module">
+    import { WebHaptics } from 'https://esm.sh/web-haptics';
+    window.__haptics = new WebHaptics();
+  </script>
+
   <script>
+    /* ========== HAPTIC FEEDBACK ========== */
+    function haptic(preset) {
+      if (window.__haptics) {
+        try { window.__haptics.trigger(preset || 'nudge'); } catch(e) {}
+      }
+    }
+
+    // CTA buttons — haptic on tap
+    document.querySelectorAll('.topbar-cta, .cta-button').forEach(function(btn) {
+      btn.addEventListener('click', function() { haptic('success'); });
+    });
+
     /* ========== SCROLL FADE-IN ========== */
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -1134,6 +1152,7 @@
     /* ========== FAQ ACCORDION ========== */
     document.querySelectorAll('.faq-item').forEach(item => {
       item.querySelector('.faq-question').addEventListener('click', () => {
+        haptic('nudge');
         const isOpen = item.classList.contains('open');
         const btn = item.querySelector('.faq-question');
         // Close all
@@ -1181,6 +1200,7 @@
       phoneInput.addEventListener('input', checkStep0);
 
       nextBtn0.addEventListener('click', async function() {
+        haptic('success');
         var data = {
           name: nameInput.value.trim(),
           email: emailInput.value.trim(),
@@ -1226,6 +1246,7 @@
       document.querySelectorAll('.quiz-options').forEach(function(grid) {
         grid.querySelectorAll('.quiz-option').forEach(function(opt) {
           opt.addEventListener('click', function() {
+            haptic('nudge');
             grid.querySelectorAll('.quiz-option').forEach(function(o) { o.classList.remove('selected'); });
             opt.classList.add('selected');
             quizData[grid.dataset.quiz] = opt.dataset.value;
@@ -1240,6 +1261,7 @@
       });
 
       function finishQuiz() {
+        haptic('success');
         // Update lead with quiz answers
         if (leadId) {
           fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + leadId, {
@@ -1304,6 +1326,7 @@
 
       // Tap to unmute/mute
       function handleTap() {
+        haptic('nudge');
         if (video.paused) video.play();
         if (video.muted) {
           video.muted = false;
@@ -1317,6 +1340,7 @@
 
       // 2x speed on right hold
       function startFastForward() {
+        haptic('buzz');
         isHolding = true;
         video.playbackRate = 2;
         speedHint.textContent = '2x Speed ▶▶';
@@ -1331,6 +1355,7 @@
 
       // Rewind on left hold
       function startRewind() {
+        haptic('buzz');
         isHolding = true;
         speedHint.textContent = '◀◀ Rewinding';
         speedHint.classList.add('visible');
