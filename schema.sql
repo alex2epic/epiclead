@@ -12,6 +12,8 @@ CREATE TABLE leads (
   phone TEXT NOT NULL,
   email TEXT,
   business_type TEXT,
+  ad_spend TEXT,
+  biggest_challenge TEXT,
   status TEXT DEFAULT 'form_started',
   source TEXT,
   retell_call_id TEXT,
@@ -27,6 +29,10 @@ ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 -- Anon can insert (form submissions from the frontend)
 CREATE POLICY "Allow anon insert" ON leads
   FOR INSERT TO anon WITH CHECK (true);
+
+-- Anon can update own leads (for progressive save + quiz answers from frontend)
+CREATE POLICY "Allow anon update" ON leads
+  FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
 -- Service role has full access (edge functions)
 CREATE POLICY "Allow service role full access" ON leads

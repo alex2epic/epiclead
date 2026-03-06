@@ -720,6 +720,11 @@
       cursor: not-allowed;
       transform: none;
     }
+    .quiz-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
     .form-consent {
       font-size: 11px;
       color: var(--text-muted);
@@ -1020,6 +1025,7 @@
         <div class="quiz-step" data-step="1">
           <span class="quiz-step-label">Step 2 of 4</span>
           <h3 class="quiz-question">What type of home service do you offer?</h3>
+          <p class="quiz-hint">Select all that apply</p>
           <div class="quiz-options" data-quiz="business_type">
             <div class="quiz-option" data-value="Roofing">
               <span class="quiz-option-emoji">🏠</span>
@@ -1046,12 +1052,14 @@
               <span class="quiz-option-label">Other</span>
             </div>
           </div>
+          <button class="quiz-next-btn" id="quiz-next-1" disabled>Next &rarr;</button>
         </div>
 
         <!-- Step 2: Ad spend -->
         <div class="quiz-step" data-step="2">
           <span class="quiz-step-label">Step 3 of 4</span>
           <h3 class="quiz-question">How much are you currently spending on ads per month?</h3>
+          <p class="quiz-hint">Select all that apply</p>
           <div class="quiz-options" data-quiz="ad_spend">
             <div class="quiz-option" data-value="Not yet">
               <span class="quiz-option-emoji">🆕</span>
@@ -1070,12 +1078,14 @@
               <span class="quiz-option-label">$5k+</span>
             </div>
           </div>
+          <button class="quiz-next-btn" id="quiz-next-2" disabled>Next &rarr;</button>
         </div>
 
         <!-- Step 3: Biggest challenge → then shows Calendly -->
         <div class="quiz-step" data-step="3">
           <span class="quiz-step-label">Last question!</span>
           <h3 class="quiz-question">What's your biggest challenge right now?</h3>
+          <p class="quiz-hint">Select all that apply</p>
           <div class="quiz-options" data-quiz="biggest_challenge">
             <div class="quiz-option" data-value="Not enough leads">
               <span class="quiz-option-emoji">📉</span>
@@ -1094,6 +1104,7 @@
               <span class="quiz-option-label">All of the above</span>
             </div>
           </div>
+          <button class="quiz-next-btn" id="quiz-next-3" disabled>Finish &rarr;</button>
         </div>
       </div>
 
@@ -1175,11 +1186,15 @@
     (function() {
       var currentStep = 0;
       var leadId = null;
-      var quizData = { business_type: '', ad_spend: '', biggest_challenge: '' };
+      var leadCreating = false;
+      var quizData = { business_type: [], ad_spend: [], biggest_challenge: [] };
       var nameInput = document.getElementById('quiz-name');
       var emailInput = document.getElementById('quiz-email');
       var phoneInput = document.getElementById('quiz-phone');
       var nextBtn0 = document.getElementById('quiz-next-0');
+      var nextBtn1 = document.getElementById('quiz-next-1');
+      var nextBtn2 = document.getElementById('quiz-next-2');
+      var nextBtn3 = document.getElementById('quiz-next-3');
 
       function goToStep(step) {
         currentStep = step;
@@ -1191,7 +1206,58 @@
         });
       }
 
-      // Step 0: Name + Email + Phone → submit lead immediately, AI caller fires
+      // --- Blur listener: progressive save ---
+      // Creates lead as soon as we have name + phone, even before clicking Next
+      async function createOrUpdateLead() {
+        var nm = nameInput.value.trim();
+        var ph = phoneInput.value.trim();
+        var em = emailInput.value.trim();
+        if (!nm || !ph) return; // need at minimum name + phone
+
+        if (leadCreating) return;
+
+        if (!leadId) {
+          // Create lead via edge function
+          leadCreating = true;
+          try {
+            var res = await fetch(SUPABASE_URL + '/functions/v1/handle-lead-submit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              },
+              body: JSON.stringify({ name: nm, phone: ph, email: em || undefined }),
+            });
+            var result = await res.json();
+            leadId = result.lead_id || null;
+            console.log('Lead auto-saved on blur:', leadId, result.duplicate ? '(existing)' : '(new)');
+          } catch (err) {
+            console.error('Blur lead save error:', err);
+          }
+          leadCreating = false;
+        } else {
+          // Update existing lead with latest field values
+          var updates = {};
+          if (nm) updates.name = nm;
+          if (em) updates.email = em;
+          fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + leadId, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify(updates),
+          }).catch(function(e) { console.error('Blur update error:', e); });
+        }
+      }
+
+      nameInput.addEventListener('blur', createOrUpdateLead);
+      emailInput.addEventListener('blur', createOrUpdateLead);
+      phoneInput.addEventListener('blur', createOrUpdateLead);
+
+      // --- Step 0: enable Next when all fields filled ---
       function checkStep0() {
         nextBtn0.disabled = !(nameInput.value.trim() && emailInput.value.trim() && phoneInput.value.trim());
       }
@@ -1211,57 +1277,98 @@
         nextBtn0.textContent = 'Saving...';
         nextBtn0.disabled = true;
 
-        try {
-          var res = await fetch(SUPABASE_URL + '/functions/v1/handle-lead-submit', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify(data),
-          });
-          var result = await res.json();
-          leadId = result.lead_id || null;
-          console.log('Lead created:', leadId);
-
-          // Fire AI caller in background (10s delay for testing, change to 90s for prod)
-          if (leadId && !result.duplicate) {
-            fetch(SUPABASE_URL + '/functions/v1/trigger-retell-call', {
+        // If blur already created the lead, just advance
+        if (!leadId) {
+          try {
+            var res = await fetch(SUPABASE_URL + '/functions/v1/handle-lead-submit', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
               },
-              body: JSON.stringify({ lead_id: leadId, delay_ms: 10000 }),
-            }).catch(function(e) { console.error('Trigger call error:', e); });
+              body: JSON.stringify(data),
+            });
+            var result = await res.json();
+            leadId = result.lead_id || null;
+            console.log('Lead created:', leadId);
+
+            // Fire AI caller in background
+            if (leadId && !result.duplicate) {
+              fetch(SUPABASE_URL + '/functions/v1/trigger-retell-call', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                },
+                body: JSON.stringify({ lead_id: leadId, delay_ms: 10000 }),
+              }).catch(function(e) { console.error('Trigger call error:', e); });
+            }
+          } catch (err) {
+            console.error('Lead submit error:', err);
           }
-        } catch (err) {
-          console.error('Lead submit error:', err);
+        } else {
+          // Lead already exists from blur — fire AI caller
+          fetch(SUPABASE_URL + '/functions/v1/trigger-retell-call', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ lead_id: leadId, delay_ms: 10000 }),
+          }).catch(function(e) { console.error('Trigger call error:', e); });
         }
 
         goToStep(1);
       });
 
-      // Steps 1-3: Quiz cards — click to select and auto-advance
+      // --- Steps 1-3: Multi-select quiz options ---
       document.querySelectorAll('.quiz-options').forEach(function(grid) {
         grid.querySelectorAll('.quiz-option').forEach(function(opt) {
           opt.addEventListener('click', function() {
             haptic('nudge');
-            grid.querySelectorAll('.quiz-option').forEach(function(o) { o.classList.remove('selected'); });
-            opt.classList.add('selected');
-            quizData[grid.dataset.quiz] = opt.dataset.value;
-
-            if (currentStep < 3) {
-              setTimeout(function() { goToStep(currentStep + 1); }, 300);
-            } else {
-              setTimeout(function() { finishQuiz(); }, 300);
-            }
+            // Toggle selection (multi-select)
+            opt.classList.toggle('selected');
+            // Update quiz data array
+            var key = grid.dataset.quiz;
+            var selected = [];
+            grid.querySelectorAll('.quiz-option.selected').forEach(function(s) {
+              selected.push(s.dataset.value);
+            });
+            quizData[key] = selected;
+            // Enable/disable the step's next button
+            updateNextBtn(currentStep);
           });
         });
       });
 
-      function finishQuiz() {
+      function updateNextBtn(step) {
+        var keys = ['', 'business_type', 'ad_spend', 'biggest_challenge'];
+        var btns = [null, nextBtn1, nextBtn2, nextBtn3];
+        if (step >= 1 && step <= 3) {
+          btns[step].disabled = quizData[keys[step]].length === 0;
+        }
+      }
+
+      // Next buttons for steps 1-3
+      nextBtn1.addEventListener('click', function() {
         haptic('success');
+        goToStep(2);
+      });
+      nextBtn2.addEventListener('click', function() {
+        haptic('success');
+        goToStep(3);
+      });
+      nextBtn3.addEventListener('click', function() {
+        haptic('success');
+        finishQuiz();
+      });
+
+      function finishQuiz() {
+        // Join multi-select arrays into comma-separated strings
+        var bt = quizData.business_type.join(', ');
+        var as = quizData.ad_spend.join(', ');
+        var bc = quizData.biggest_challenge.join(', ');
+
         // Update lead with quiz answers
         if (leadId) {
           fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + leadId, {
@@ -1273,10 +1380,11 @@
               'Prefer': 'return=minimal',
             },
             body: JSON.stringify({
-              business_type: quizData.business_type,
-              ad_spend: quizData.ad_spend,
-              biggest_challenge: quizData.biggest_challenge,
-              notes: 'Business: ' + quizData.business_type + '. Ad spend: ' + quizData.ad_spend + '. Challenge: ' + quizData.biggest_challenge,
+              business_type: bt,
+              ad_spend: as,
+              biggest_challenge: bc,
+              notes: 'Business: ' + bt + '. Ad spend: ' + as + '. Challenge: ' + bc,
+              status: 'quiz_completed',
             }),
           }).catch(function(e) { console.error('Quiz update error:', e); });
         }
